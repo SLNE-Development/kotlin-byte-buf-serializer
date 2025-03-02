@@ -50,5 +50,4 @@ class BufTest {
             bufFormat.decodeFromBuf<Player>(emptyBuf)
         }
     }
-
 }

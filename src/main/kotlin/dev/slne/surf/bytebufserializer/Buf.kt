@@ -10,7 +10,7 @@ import kotlinx.serialization.modules.SerializersModule
 
 sealed class Buf(
     override val serializersModule: SerializersModule = EmptySerializersModule(),
-    public val configuration: BufConfiguration = BufConfiguration()
+    private val configuration: BufConfiguration = BufConfiguration()
 ) : BinaryFormat {
 
     companion object Default : Buf(EmptySerializersModule(), BufConfiguration()) {
@@ -23,12 +23,12 @@ sealed class Buf(
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    fun <T> encodeToBuf(
-        buf: ByteBuf,
+    fun <T, B: ByteBuf> encodeToBuf(
+        buf: B,
         serializer: SerializationStrategy<T>,
         value: T
     ) {
-        val encoder = BufEncoder(buf, serializersModule, configuration.enumsWithOrdinal)
+        val encoder = BufEncoder(buf, serializersModule, configuration)
         encoder.encodeSerializableValue(serializer, value)
     }
 
@@ -37,7 +37,7 @@ sealed class Buf(
         buf: ByteBuf,
         deserializer: DeserializationStrategy<T>
     ): T {
-        val decoder = BufDecoder(buf, serializersModule, configuration.enumsWithOrdinal)
+        val decoder = BufDecoder(buf, serializersModule, configuration)
         return decoder.decodeSerializableValue(deserializer)
     }
 

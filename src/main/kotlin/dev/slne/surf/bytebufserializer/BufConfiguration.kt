@@ -1,3 +1,3 @@
 package dev.slne.surf.bytebufserializer
 
-class BufConfiguration(internal var enumsWithOrdinal: Boolean = true, )
+data class BufConfiguration(internal var enumsWithOrdinal: Boolean = true)

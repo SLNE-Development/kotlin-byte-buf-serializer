@@ -14,14 +14,16 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0")
     implementation("io.netty:netty-all:4.1.119.Final")
 
-
     testImplementation(kotlin("test"))
-    
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks {
+    test {
+        useJUnitPlatform()
+    }
 }
+
+
 kotlin {
     jvmToolchain(21)
 }

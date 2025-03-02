@@ -1,5 +1,6 @@
 package dev.slne.surf.bytebufserializer.internal
 
+import dev.slne.surf.bytebufserializer.BufConfiguration
 import io.netty.buffer.ByteBuf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -11,7 +12,7 @@ import kotlinx.serialization.modules.SerializersModule
 class BufEncoder<B : ByteBuf>(
     val buf: B,
     override val serializersModule: SerializersModule,
-    private val encodeEnumWithOrdinal: Boolean,
+    private val configuration: BufConfiguration,
 ) : AbstractEncoder() {
     override fun encodeBoolean(value: Boolean) = useCustomOr(value) {
         buf.writeBoolean(value)
@@ -52,7 +53,7 @@ class BufEncoder<B : ByteBuf>(
     }
 
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
-        if (encodeEnumWithOrdinal) {
+        if (configuration.enumsWithOrdinal) {
             encodeInt(index)
         } else {
             encodeString(enumDescriptor.getElementName(index))

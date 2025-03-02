@@ -1,5 +1,6 @@
 package dev.slne.surf.bytebufserializer.internal
 
+import dev.slne.surf.bytebufserializer.BufConfiguration
 import io.netty.buffer.ByteBuf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -11,7 +12,7 @@ import kotlinx.serialization.modules.SerializersModule
 class BufDecoder<B : ByteBuf>(
     val buf: B,
     override val serializersModule: SerializersModule,
-    private val decodeEnumWithOrdinal: Boolean,
+    private val configuration: BufConfiguration,
     private var elementsCount: Int = 0
 ) : AbstractDecoder() {
     private var elementIndex = 0
@@ -62,7 +63,7 @@ class BufDecoder<B : ByteBuf>(
     }
 
     override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-        return if (decodeEnumWithOrdinal) {
+        return if (configuration.enumsWithOrdinal) {
             buf.readByte().toInt()
         } else {
             val name = decodeString()
@@ -71,7 +72,7 @@ class BufDecoder<B : ByteBuf>(
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
-        return BufDecoder(buf, serializersModule, decodeEnumWithOrdinal, descriptor.elementsCount)
+        return BufDecoder(buf, serializersModule, configuration, descriptor.elementsCount)
     }
 
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int =
