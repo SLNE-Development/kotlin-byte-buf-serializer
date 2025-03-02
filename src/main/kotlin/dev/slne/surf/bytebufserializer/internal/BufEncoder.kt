@@ -13,39 +13,39 @@ class BufEncoder<B : ByteBuf>(
     override val serializersModule: SerializersModule,
     private val encodeEnumWithOrdinal: Boolean,
 ) : AbstractEncoder() {
-    override fun encodeBoolean(value: Boolean) {
+    override fun encodeBoolean(value: Boolean) = useCustomOr(value) {
         buf.writeBoolean(value)
     }
 
-    override fun encodeByte(value: Byte) {
+    override fun encodeByte(value: Byte) = useCustomOr(value) {
         buf.writeByte(value.toInt())
     }
 
-    override fun encodeShort(value: Short) {
+    override fun encodeShort(value: Short) = useCustomOr(value) {
         buf.writeShort(value.toInt())
     }
 
-    override fun encodeInt(value: Int) {
+    override fun encodeInt(value: Int) = useCustomOr(value) {
         buf.writeInt(value)
     }
 
-    override fun encodeLong(value: Long) {
+    override fun encodeLong(value: Long) = useCustomOr(value) {
         buf.writeLong(value)
     }
 
-    override fun encodeFloat(value: Float) {
+    override fun encodeFloat(value: Float) = useCustomOr(value) {
         buf.writeFloat(value)
     }
 
-    override fun encodeDouble(value: Double) {
+    override fun encodeDouble(value: Double) = useCustomOr(value) {
         buf.writeDouble(value)
     }
 
-    override fun encodeChar(value: Char) {
+    override fun encodeChar(value: Char) = useCustomOr(value) {
         buf.writeChar(value.code)
     }
 
-    override fun encodeString(value: String) {
+    override fun encodeString(value: String) = useCustomOr(value) {
         val bytes = value.toByteArray(Charsets.UTF_8)
         buf.writeInt(bytes.size)
         buf.writeBytes(bytes)
@@ -67,12 +67,21 @@ class BufEncoder<B : ByteBuf>(
         return this
     }
 
-
     override fun encodeNull() {
         encodeBoolean(false)
     }
 
     override fun encodeNotNullMark() {
         encodeBoolean(true)
+    }
+
+    private inline fun <reified T : Any> useCustomOr(value: T, fallback: () -> Unit) {
+        val serializer = serializersModule.getContextual(T::class)
+
+        if (serializer != null) {
+            encodeSerializableValue(serializer, value)
+        } else {
+            fallback()
+        }
     }
 }

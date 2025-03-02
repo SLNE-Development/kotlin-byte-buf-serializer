@@ -21,21 +21,44 @@ class BufDecoder<B : ByteBuf>(
         return elementIndex++
     }
 
-    override fun decodeBoolean(): Boolean = buf.readBoolean()
-    override fun decodeByte(): Byte = buf.readByte()
-    override fun decodeShort(): Short = buf.readShort()
-    override fun decodeInt(): Int = buf.readInt()
-    override fun decodeLong(): Long = buf.readLong()
-    override fun decodeFloat(): Float = buf.readFloat()
-    override fun decodeDouble(): Double = buf.readDouble()
-    override fun decodeChar(): Char = buf.readChar().toChar()
+    override fun decodeBoolean(): Boolean = useCustomOr {
+        buf.readBoolean()
+    }
+
+    override fun decodeByte(): Byte = useCustomOr {
+        buf.readByte()
+    }
+
+    override fun decodeShort(): Short = useCustomOr {
+        buf.readShort()
+    }
+
+    override fun decodeInt(): Int = useCustomOr {
+        buf.readInt()
+    }
+
+    override fun decodeLong(): Long = useCustomOr {
+        buf.readLong()
+    }
+
+    override fun decodeFloat(): Float = useCustomOr {
+        buf.readFloat()
+    }
+
+    override fun decodeDouble(): Double = useCustomOr {
+        buf.readDouble()
+    }
+
+    override fun decodeChar(): Char = useCustomOr {
+        buf.readChar().toChar()
+    }
 
 
-    override fun decodeString(): String {
+    override fun decodeString(): String = useCustomOr {
         val length = buf.readInt()
         val bytes = ByteArray(length)
         buf.readBytes(bytes)
-        return String(bytes, Charsets.UTF_8)
+        String(bytes, Charsets.UTF_8)
     }
 
     override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
@@ -52,8 +75,18 @@ class BufDecoder<B : ByteBuf>(
     }
 
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int =
-        buf.readInt().also { elementsCount = it }
+        decodeInt().also { elementsCount = it }
 
     override fun decodeSequentially(): Boolean = true
     override fun decodeNotNullMark(): Boolean = decodeBoolean()
+
+    private inline fun <reified T : Any> useCustomOr(fallback: () -> T): T {
+        val serializer = serializersModule.getContextual(T::class)
+
+        return if (serializer != null) {
+            decodeSerializableValue(serializer)
+        } else {
+            fallback()
+        }
+    }
 }
