@@ -1,6 +1,8 @@
 plugins {
     kotlin("jvm")
     kotlin("plugin.serialization")
+
+    `maven-publish`
 }
 
 group = "dev.slne.surf"
@@ -26,4 +28,20 @@ tasks {
 
 kotlin {
     jvmToolchain(21)
+}
+
+publishing {
+    repositories {
+        maven("https://repo.slne.dev/repository/maven-releases/") {
+            name = "maven-releases"
+            credentials {
+                username = System.getenv("SLNE_RELEASES_REPO_USERNAME")
+                password = System.getenv("SLNE_RELEASES_REPO_PASSWORD")
+            }
+        }
+    }
+
+    publications.create<MavenPublication>("maven") {
+        from(components["java"])
+    }
 }
