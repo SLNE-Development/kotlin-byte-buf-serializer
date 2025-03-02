@@ -59,29 +59,20 @@ class BufEncoder<B : ByteBuf>(
         }
     }
 
-    override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
-        buf.writeByte(index)
-        return true
-    }
-
-    override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        return BufEncoder(buf, serializersModule, encodeEnumWithOrdinal)
-    }
-
-    override fun endStructure(descriptor: SerialDescriptor) {
-    }
-
     override fun beginCollection(
         descriptor: SerialDescriptor,
         collectionSize: Int
     ): CompositeEncoder {
-        buf.writeInt(collectionSize)
-
-        return return BufEncoder(buf, serializersModule, encodeEnumWithOrdinal)
+        encodeInt(collectionSize)
+        return this
     }
 
 
     override fun encodeNull() {
-        buf.writeByte(-1)
+        encodeBoolean(false)
+    }
+
+    override fun encodeNotNullMark() {
+        encodeBoolean(true)
     }
 }

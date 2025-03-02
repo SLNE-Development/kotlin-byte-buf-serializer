@@ -9,60 +9,27 @@ import kotlinx.serialization.modules.SerializersModule
 
 @ExperimentalSerializationApi
 class BufDecoder<B : ByteBuf>(
-    private val buf: B,
+    val buf: B,
     override val serializersModule: SerializersModule,
     private val decodeEnumWithOrdinal: Boolean,
+    private var elementsCount: Int = 0
 ) : AbstractDecoder() {
-
-    private val readFields = mutableSetOf<Int>()
+    private var elementIndex = 0
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-        if (!buf.isReadable) return CompositeDecoder.DECODE_DONE
-
-        val fieldId = buf.readByte().toInt()
-
-        println("fieldId: $fieldId")
-        println("descriptor.elementsCount: ${descriptor.elementsCount}")
-
-        return if (fieldId in 0 until descriptor.elementsCount) {
-            readFields.add(fieldId)
-            fieldId
-        } else {
-            CompositeDecoder.UNKNOWN_NAME
-        }
+        if (elementIndex == elementsCount) return CompositeDecoder.DECODE_DONE
+        return elementIndex++
     }
 
-    override fun decodeBoolean(): Boolean {
-        return buf.readBoolean()
-    }
+    override fun decodeBoolean(): Boolean = buf.readBoolean()
+    override fun decodeByte(): Byte = buf.readByte()
+    override fun decodeShort(): Short = buf.readShort()
+    override fun decodeInt(): Int = buf.readInt()
+    override fun decodeLong(): Long = buf.readLong()
+    override fun decodeFloat(): Float = buf.readFloat()
+    override fun decodeDouble(): Double = buf.readDouble()
+    override fun decodeChar(): Char = buf.readChar().toChar()
 
-    override fun decodeByte(): Byte {
-        return buf.readByte()
-    }
-
-    override fun decodeShort(): Short {
-        return buf.readShort()
-    }
-
-    override fun decodeInt(): Int {
-        return buf.readInt()
-    }
-
-    override fun decodeLong(): Long {
-        return buf.readLong()
-    }
-
-    override fun decodeFloat(): Float {
-        return buf.readFloat()
-    }
-
-    override fun decodeDouble(): Double {
-        return buf.readDouble()
-    }
-
-    override fun decodeChar(): Char {
-        return buf.readChar().toChar()
-    }
 
     override fun decodeString(): String {
         val length = buf.readInt()
@@ -80,18 +47,13 @@ class BufDecoder<B : ByteBuf>(
         }
     }
 
-    override fun decodeNotNullMark(): Boolean {
-        return buf.readByte().toInt() != -1
-    }
-
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
-        return BufDecoder(buf, serializersModule, decodeEnumWithOrdinal)
+        return BufDecoder(buf, serializersModule, decodeEnumWithOrdinal, descriptor.elementsCount)
     }
 
-    override fun endStructure(descriptor: SerialDescriptor) {
-    }
+    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int =
+        buf.readInt().also { elementsCount = it }
 
-    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int {
-        return buf.readInt()
-    }
+    override fun decodeSequentially(): Boolean = true
+    override fun decodeNotNullMark(): Boolean = decodeBoolean()
 }
